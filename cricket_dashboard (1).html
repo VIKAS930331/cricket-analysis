@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cricket Analysis Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, rgba(173, 216, 230, 0.5), rgba(240, 248, 255, 0.5));
+            backdrop-filter: blur(10px);
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        h2 {
+            color: #fff;
+        }
+        #dashboard div {
+            width: 40%;
+            display: inline-block;
+            margin: 10px;
+            padding: 15px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        input {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h2>Upload Cricket Analysis JSON File</h2>
+    <input type="file" id="fileInput" accept=".json">
+    
+    <div id="dashboard">
+        <div id="matchResults"></div>
+        <div id="topScorers"></div>
+        <div id="topWicketTakers"></div>
+        <div id="manOfTheMatch"></div>
+        <div id="runsVsWickets" style="width: 100%;"></div>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const jsonData = JSON.parse(e.target.result);
+                    generateDashboard(jsonData);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function generateDashboard(data) {
+            const teams = {};
+            const topScorers = {};
+            const topWicketTakers = {};
+            const manOfTheMatch = {};
+            const runs = [];
+            const wickets = [];
+
+            data.forEach(match => {
+                teams[match.Winner] = (teams[match.Winner] || 0) + 1;
+                topScorers[match["Top Scorer"]] = match["Top Scorer Runs"];
+                topWicketTakers[match["Top Wicket Taker"]] = match["Wickets Taken"];
+                manOfTheMatch[match["Man of the Match"]] = (manOfTheMatch[match["Man of the Match"]] || 0) + 1;
+                runs.push(match["Top Scorer Runs"]);
+                wickets.push(match["Wickets Taken"]);
+            });
+
+            // Match Results Summary
+            Plotly.newPlot('matchResults', [{
+                x: Object.keys(teams),
+                y: Object.values(teams),
+                type: 'bar'
+            }], { title: 'Match Wins by Team' });
+
+            // Top Scorers
+            Plotly.newPlot('topScorers', [{
+                x: Object.keys(topScorers),
+                y: Object.values(topScorers),
+                type: 'bar'
+            }], { title: 'Top Scorers & Their Runs' });
+
+            // Top Wicket Takers
+            Plotly.newPlot('topWicketTakers', [{
+                x: Object.keys(topWicketTakers),
+                y: Object.values(topWicketTakers),
+                type: 'bar'
+            }], { title: 'Top Wicket Takers' });
+
+            // Man of the Match Distribution
+            Plotly.newPlot('manOfTheMatch', [{
+                x: Object.keys(manOfTheMatch),
+                y: Object.values(manOfTheMatch),
+                type: 'bar'
+            }], { title: 'Man of the Match Distribution' });
+
+            // Runs vs Wickets Correlation
+            Plotly.newPlot('runsVsWickets', [{
+                x: runs,
+                y: wickets,
+                mode: 'markers',
+                type: 'scatter'
+            }], { title: 'Runs vs Wickets Correlation', xaxis: { title: 'Runs' }, yaxis: { title: 'Wickets' } });
+        }
+    </script>
+</body>
+</html>
